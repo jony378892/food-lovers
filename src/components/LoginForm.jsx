@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 export default function LoginForm() {
   const {
@@ -9,25 +10,46 @@ export default function LoginForm() {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm();
+  } = useForm({
+    mode: "onBlur",
+    defaultValues: {
+      email: "",
+      password: "",
+      remember: false,
+    },
+  });
 
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     setSuccessMessage("");
+    setSubmitError("");
 
     try {
+      // Log form data to console
+      console.log("📝 Login Form Data:", {
+        email: data.email,
+        password: data.password,
+        rememberMe: data.remember,
+        timestamp: new Date().toISOString(),
+      });
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      console.log("Collected Login Data:", data);
-
-      setSuccessMessage("Login successful! ");
+      setSuccessMessage("Login successful! Redirecting...");
       reset();
+
+      // Simulate redirect after 2 seconds
+      setTimeout(() => {
+        console.log("🔄 Redirecting to dashboard...");
+      }, 2000);
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("✗ Login Error:", error);
+      setSubmitError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -122,13 +144,47 @@ export default function LoginForm() {
         </label>
       </div>
 
+      {/* Submit Error */}
+      {submitError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg text-sm flex items-start gap-2">
+          <span>✕</span>
+          <span>{submitError}</span>
+        </div>
+      )}
+
       {/* Submit Button */}
       <button
         type="submit"
         disabled={isLoading}
         className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-semibold py-3 px-4 rounded-lg transition shadow-md hover:shadow-lg"
       >
-        {isLoading ? "Signing in..." : "Sign In"}
+        {isLoading ? (
+          <span className="flex items-center justify-center">
+            <svg
+              className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Signing in...
+          </span>
+        ) : (
+          "Sign In"
+        )}
       </button>
 
       {/* Divider */}
@@ -138,13 +194,16 @@ export default function LoginForm() {
         <div className="flex-1 border-t border-gray-300"></div>
       </div>
 
+      {/* Google Sign In */}
+      <GoogleSignInButton />
+
       {/* Sign Up Link */}
-      <div className="text-center">
+      <div className="text-center mt-6">
         <p className="text-sm text-gray-700">
           Don&apos;t have an account?{" "}
           <a
             href="/signup"
-            className="text-amber-600 hover:text-amber-700 font-semibold"
+            className="text-amber-600 hover:text-amber-700 font-semibold transition duration-200"
           >
             Create one now
           </a>

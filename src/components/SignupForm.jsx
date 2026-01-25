@@ -1,209 +1,167 @@
 "use client";
 
+import { useForm } from "react-hook-form";
 import { useState } from "react";
 import Link from "next/link";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 export default function SignupForm() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeToTerms: false,
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm({
+    mode: "onBlur",
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      agreeToTerms: false,
+    },
   });
 
-  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const password = watch("password");
 
-  // Validation logic
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Full name validation
-    if (!formData.fullName) {
-      newErrors.fullName = "Full name is required";
-    } else if (formData.fullName.length < 2) {
-      newErrors.fullName = "Full name must be at least 2 characters";
-    }
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password =
-        "Password must include uppercase, lowercase, and numbers";
-    }
-
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    // Terms agreement validation
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = "You must agree to the terms and conditions";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSuccessMessage("");
-
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = async (data) => {
     setIsLoading(true);
+    setSuccessMessage("");
+    setSubmitError("");
 
     try {
+      // Log form data to console
+      console.log("📝 Signup Form Data:", {
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        agreeToTerms: data.agreeToTerms,
+        timestamp: new Date().toISOString(),
+      });
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Here you would typically send the data to your backend
-      console.log("Signup data:", formData);
 
       setSuccessMessage(
         "Account created successfully! Redirecting to login...",
       );
-      setFormData({
-        fullName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        agreeToTerms: false,
-      });
+      reset();
 
       // Simulate redirect after 2 seconds
       setTimeout(() => {
-        // window.location.href = '/login';
-        console.log("Redirecting to login...");
+        console.log("🔄 Redirecting to login...");
       }, 2000);
     } catch (error) {
-      setErrors({ submit: "An error occurred. Please try again." });
+      console.error("✗ Signup Error:", error);
+      setSubmitError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full">
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
-          {successMessage}
+        <div className="mb-4 p-4 bg-green-50 border border-green-300 text-green-800 rounded-lg text-sm flex items-start gap-2">
+          <span className="text-lg">✓</span>
+          <span>{successMessage}</span>
         </div>
       )}
 
       {/* Full Name Field */}
       <div className="mb-5">
-        <label
-          htmlFor="fullName"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
+        <label className="block text-sm font-semibold text-gray-800 mb-2">
           Full Name
         </label>
         <input
           type="text"
-          id="fullName"
-          name="fullName"
-          value={formData.fullName}
-          onChange={handleChange}
           placeholder="John Doe"
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
-            errors.fullName
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-amber-500"
-          }`}
           disabled={isLoading}
+          {...register("fullName", {
+            required: "Full name is required",
+            minLength: {
+              value: 2,
+              message: "Full name must be at least 2 characters",
+            },
+          })}
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition ${
+            errors.fullName
+              ? "border-red-500 focus:ring-red-200"
+              : "border-gray-300 focus:ring-amber-200 focus:border-amber-500"
+          }`}
         />
         {errors.fullName && (
-          <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠</span> {errors.fullName.message}
+          </p>
         )}
       </div>
 
       {/* Email Field */}
       <div className="mb-5">
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
+        <label className="block text-sm font-semibold text-gray-800 mb-2">
           Email Address
         </label>
         <input
           type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
           placeholder="you@example.com"
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
-            errors.email
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-amber-500"
-          }`}
           disabled={isLoading}
+          {...register("email", {
+            required: "Email is required",
+            pattern: {
+              value: /^\S+@\S+$/i,
+              message: "Enter a valid email address",
+            },
+          })}
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition ${
+            errors.email
+              ? "border-red-500 focus:ring-red-200"
+              : "border-gray-300 focus:ring-amber-200 focus:border-amber-500"
+          }`}
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠</span> {errors.email.message}
+          </p>
         )}
       </div>
 
       {/* Password Field */}
       <div className="mb-5">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
+        <label className="block text-sm font-semibold text-gray-800 mb-2">
           Password
         </label>
         <input
           type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
           placeholder="••••••••"
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
-            errors.password
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-amber-500"
-          }`}
           disabled={isLoading}
+          {...register("password", {
+            required: "Password is required",
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters",
+            },
+            pattern: {
+              value: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+              message:
+                "Password must include uppercase, lowercase, and numbers",
+            },
+          })}
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition ${
+            errors.password
+              ? "border-red-500 focus:ring-red-200"
+              : "border-gray-300 focus:ring-amber-200 focus:border-amber-500"
+          }`}
         />
         {errors.password && (
-          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠</span> {errors.password.message}
+          </p>
         )}
         <p className="mt-1 text-xs text-gray-500">
           At least 8 characters with uppercase, lowercase, and numbers
@@ -212,28 +170,27 @@ export default function SignupForm() {
 
       {/* Confirm Password Field */}
       <div className="mb-5">
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
+        <label className="block text-sm font-semibold text-gray-800 mb-2">
           Confirm Password
         </label>
         <input
           type="password"
-          id="confirmPassword"
-          name="confirmPassword"
-          value={formData.confirmPassword}
-          onChange={handleChange}
           placeholder="••••••••"
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition ${
-            errors.confirmPassword
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-amber-500"
-          }`}
           disabled={isLoading}
+          {...register("confirmPassword", {
+            required: "Please confirm your password",
+            validate: (value) => value === password || "Passwords do not match",
+          })}
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition ${
+            errors.confirmPassword
+              ? "border-red-500 focus:ring-red-200"
+              : "border-gray-300 focus:ring-amber-200 focus:border-amber-500"
+          }`}
         />
         {errors.confirmPassword && (
-          <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠</span> {errors.confirmPassword.message}
+          </p>
         )}
       </div>
 
@@ -242,11 +199,11 @@ export default function SignupForm() {
         <label className="flex items-center cursor-pointer">
           <input
             type="checkbox"
-            name="agreeToTerms"
-            checked={formData.agreeToTerms}
-            onChange={handleChange}
+            className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
             disabled={isLoading}
-            className="w-4 h-4 accent-amber-600 rounded"
+            {...register("agreeToTerms", {
+              required: "You must agree to the terms and conditions",
+            })}
           />
           <span className="ml-2 text-sm text-gray-700">
             I agree to the{" "}
@@ -266,14 +223,17 @@ export default function SignupForm() {
           </span>
         </label>
         {errors.agreeToTerms && (
-          <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms}</p>
+          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠</span> {errors.agreeToTerms.message}
+          </p>
         )}
       </div>
 
       {/* Submit Error */}
-      {errors.submit && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-          {errors.submit}
+      {submitError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-lg text-sm flex items-start gap-2">
+          <span>✕</span>
+          <span>{submitError}</span>
         </div>
       )}
 
@@ -281,7 +241,7 @@ export default function SignupForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+        className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-semibold py-3 px-4 rounded-lg transition shadow-md hover:shadow-lg"
       >
         {isLoading ? (
           <span className="flex items-center justify-center">
@@ -312,13 +272,23 @@ export default function SignupForm() {
         )}
       </button>
 
+      {/* Divider */}
+      <div className="my-6 flex items-center">
+        <div className="flex-1 border-t border-gray-300"></div>
+        <div className="px-3 text-sm text-gray-500">or</div>
+        <div className="flex-1 border-t border-gray-300"></div>
+      </div>
+
+      {/* Google Sign In */}
+      <GoogleSignInButton />
+
       {/* Login Link */}
-      <div className="mt-4 text-center text-sm text-gray-600">
-        <p>
+      <div className="text-center mt-6">
+        <p className="text-sm text-gray-700">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-amber-600 hover:text-amber-700 font-medium"
+            className="text-amber-600 hover:text-amber-700 font-semibold transition duration-200"
           >
             Sign in
           </Link>
